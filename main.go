@@ -4,15 +4,13 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
-
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 )
 
 const (
 	appName    = "HTTP Server"
-	appVersion = "v0.1.0"
+	appVersion = "v0.2.0"
 	defaultDir = "./public"
 )
 
@@ -40,14 +38,11 @@ func main() {
 	}
 
 	/// Server
-	e := echo.New()
-	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Format: "[${status}] ${method} ${uri} ${remote_ip} ${error}\n",
-	}))
-	e.Static("/", *d)
-
 	fmt.Println("Server at:", *d)
-	if err := e.Start(fmt.Sprintf("%s:%v", *a, *p)); err != nil {
+	addr := fmt.Sprintf("%s:%v", *a, *p)
+	fs := http.FileServer(http.Dir(*d))
+	err := http.ListenAndServe(addr, fs)
+	if err != nil {
 		log.Fatal(err)
 	}
 }
