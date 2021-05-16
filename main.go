@@ -6,19 +6,32 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
+	"strings"
 )
 
 const (
-	appName    = "HTTP Server"
-	appVersion = "v0.2.0"
-	defaultDir = "./public"
+	appName             = "HTTP Server"
+	appVersion          = "v0.3.0"
+	defaultHost         = "localhost"
+	defaultPort         = 8080
+	defaultRoot         = "./public"
+	defaultProtect      = "/protect http://localhost/auth"
+	defaultRedirectPage = "/auth"
 )
+
+type ProtectDir struct {
+	Dir     string
+	AuthURL string
+}
 
 func main() {
 	/// Flag args
-	d := flag.String("d", defaultDir, "Which dir to serve?")
-	a := flag.String("a", "localhost", "An address to use")
-	p := flag.Int("p", 5000, "A port to use")
+	root := flag.String("root", defaultRoot, "Which dir to serve?")
+	host := flag.String("host", defaultHost, "An address to use")
+	port := flag.Int("port", defaultPort, "A port to use")
+	protect := flag.String("protect", defaultProtect, "Protection dir")
+	redirectPage := flag.String("redirect", defaultRedirectPage, "Authentication page")
 	v := flag.Bool("v", false, "Show the app version")
 	flag.Parse()
 
@@ -28,20 +41,60 @@ func main() {
 		os.Exit(0)
 	}
 
-	// Default path
-	if *d == defaultDir {
-		// If not exist, use the working dir
-		if _, err := os.Stat(defaultDir); os.IsNotExist(err) {
-			workingDir := "./"
-			d = &workingDir
+	/// Auth
+	protectDirs := []ProtectDir{}
+	if *protect != "" {
+		parts := strings.Split(*protect, " ")
+		for i := 0; i < len(parts); i = i + 2 {
+			protectDirs = append(protectDirs, ProtectDir{
+				Dir:     parts[i],
+				AuthURL: parts[i+1],
+			})
 		}
 	}
 
 	/// Server
-	fmt.Println("Server at:", *d)
-	addr := fmt.Sprintf("%s:%v", *a, *p)
-	fs := http.FileServer(http.Dir(*d))
-	err := http.ListenAndServe(addr, fs)
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		isAllowed := true
+		for _, v := range protectDirs {
+			if strings.Contains(r.URL.Path, v.Dir) {
+				isAllowed = false
+				client := &http.Client{}
+				req, err := http.NewRequest(http.MethodPost, v.AuthURL, nil)
+				if err != nil {
+					break
+				}
+
+				// Token in cooke
+				cookie, err := r.Cookie("token")
+				if err != nil {
+					break
+				}
+
+				token := cookie.Value
+				log.Println(token)
+
+				req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
+				res, err := client.Do(req)
+				if err == nil && res.StatusCode == 200 {
+					isAllowed = true
+				}
+
+				break
+			}
+		}
+
+		if isAllowed {
+			filename := path.Join(*root, r.URL.Path)
+			http.ServeFile(w, r, filename)
+		} else {
+			http.Redirect(w, r, *redirectPage, http.StatusSeeOther)
+		}
+	})
+
+	addr := fmt.Sprintf("%s:%v", *host, *port)
+	fmt.Println("Server", *root, "at", addr)
+	err := http.ListenAndServe(addr, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
