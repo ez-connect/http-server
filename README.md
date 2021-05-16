@@ -17,6 +17,7 @@ http-server [-d <path/to/dir>] [-a <address>] [-p <port>] [-v]
 - `-root` Which dir to serve? Defaults to `./public`
 - `-host` host name, defaults to `localhost`
 - `-port` a port to use, defaults to `8080`
-- `-private` protected dirs, defaults to `/private http://localhost/auth`
+- `-privates` protected dirs, defaults to `/private /protected`
+- `-auth` Authentication URL
 - `-redirect` authentication page, defaults to `/auth`
 - `-v` Show the app version

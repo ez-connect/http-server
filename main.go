@@ -16,21 +16,17 @@ const (
 	defaultHost         = "localhost"
 	defaultPort         = 8080
 	defaultRoot         = "./public"
-	defaultPrivate      = "/private http://localhost/auth"
+	defaultPrivates     = "/private /protected"
 	defaultRedirectPage = "/auth"
 )
-
-type ProtectDir struct {
-	Dir     string
-	AuthURL string
-}
 
 func main() {
 	/// Flag args
 	root := flag.String("root", defaultRoot, "Which dir to serve?")
 	host := flag.String("host", defaultHost, "An address to use")
 	port := flag.Int("port", defaultPort, "A port to use")
-	private := flag.String("private", defaultPrivate, "Protected dirs")
+	privates := flag.String("privates", defaultPrivates, "Protected dirs")
+	auth := flag.String("auth", "", "Authentication URL")
 	redirectPage := flag.String("redirect", defaultRedirectPage, "Authentication page")
 	v := flag.Bool("v", false, "Show the app version")
 	flag.Parse()
@@ -42,25 +38,16 @@ func main() {
 	}
 
 	/// Auth
-	privateDirs := []ProtectDir{}
-	if *private != "" {
-		parts := strings.Split(*private, " ")
-		for i := 0; i < len(parts); i = i + 2 {
-			privateDirs = append(privateDirs, ProtectDir{
-				Dir:     parts[i],
-				AuthURL: parts[i+1],
-			})
-		}
-	}
+	privateDirs := strings.Split(*privates, " ")
 
 	/// Server
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		isAllowed := true
 		for _, v := range privateDirs {
-			if strings.Contains(r.URL.Path, v.Dir) {
+			if strings.Contains(r.URL.Path, v) {
 				isAllowed = false
 				client := &http.Client{}
-				req, err := http.NewRequest(http.MethodPost, v.AuthURL, nil)
+				req, err := http.NewRequest(http.MethodPost, *auth, nil)
 				if err != nil {
 					break
 				}
