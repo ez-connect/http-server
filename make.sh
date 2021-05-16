@@ -1,4 +1,4 @@
-appName=http-static
+appName=http-server
 buildDir=build
 platforms=( windows linux darwin )
 archs=( amd64 )
