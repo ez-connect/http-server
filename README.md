@@ -14,7 +14,9 @@ go install github.com/ez-connect/http-server
 http-server [-d <path/to/dir>] [-a <address>] [-p <port>] [-v]
 ```
 
-- `-d` Which dir to serve? `./public` if it exist or the working dir
-- `-a` an address to use, defaults to `localhost`
-- `-p` a port to use, defaults to `5000`
+- `-root` Which dir to serve? Defaults to `./public`
+- `-host` host name, defaults to `localhost`
+- `-port` a port to use, defaults to `8080`
+- `-private` protected dirs, defaults to `/private http://localhost/auth`
+- `-redirect` authentication page, defaults to `/auth`
 - `-v` Show the app version
