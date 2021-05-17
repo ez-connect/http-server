@@ -110,7 +110,7 @@ func main() {
 	addr := fmt.Sprintf("%s:%v", *host, *port)
 
 	fmt.Println(fmt.Sprintf("%s %s", appName, appVersion))
-	fmt.Println("Protected dir", len(protectedDirs), ":\"", *protected, "\"")
+	fmt.Println("Protected dirs:", protectedDirs)
 	fmt.Println("Authentication URL:", *auth)
 	fmt.Println("Expired in:", *exp)
 	fmt.Println("Redirect page:", *redirectPage)
