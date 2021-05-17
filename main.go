@@ -59,8 +59,6 @@ func main() {
 				}
 
 				token := cookie.Value
-				log.Println(token)
-
 				req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", token))
 				res, err := client.Do(req)
 				if err == nil && res.StatusCode == http.StatusOK {
