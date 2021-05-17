@@ -17,7 +17,7 @@ http-server [-root <path/to/dir>] [-host <host_name>] [-port <port_number>] [-re
 ```
 
 - `-root` Which dir to serve? Defaults to `./`
-- `-host` host name, defaults to `localhost`
+- `-host` host name, defaults to empty
 - `-port` a port to use, defaults to `8080`
 - `-auth` Authentication URL, defaults to empty
 - `-redirect` authentication page, defaults to `/auth`

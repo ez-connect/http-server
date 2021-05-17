@@ -18,7 +18,7 @@ const (
 func main() {
 	/// Flag args
 	root := flag.String("root", "./", "Which dir to serve?")
-	host := flag.String("host", "localhost", "An address to use")
+	host := flag.String("host", "", "An address to use")
 	port := flag.Int("port", 8080, "A port to use")
 	auth := flag.String("auth", "", "Authentication URL")
 	exp := flag.Int64("exp", 15*60, "Expire token")
@@ -96,6 +96,10 @@ func main() {
 				break
 			}
 		}
+
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Expose-Headers", "Authorization")
 
 		if isAllowed {
 			debug(" Allowed")
