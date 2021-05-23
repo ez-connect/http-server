@@ -12,10 +12,10 @@ for p in "${platforms[@]}"
 do
 	for a in "${archs[@]}"
 	do
-		echo $p-$a
-
 		binaryFile=$buildDir/$appName-$p-$a
 		zipFile=$binaryFile.zip
+
+		echo $binaryFile
 
 		if [ "$p" = "windows" ]
 		then

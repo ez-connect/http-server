@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"path"
 	"strings"
 	"time"
@@ -12,7 +13,7 @@ import (
 
 const (
 	appName    = "HTTP Server"
-	appVersion = "v0.3.0"
+	appVersion = "v0.3.1"
 )
 
 func main() {
@@ -42,6 +43,7 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		isAllowed := true
 		debug(r.Method, r.URL.Path)
+
 		for _, v := range protectedDirs {
 			if strings.Contains(r.URL.Path, v) {
 				debug("Protected:", r.URL.Path, v)
@@ -104,7 +106,11 @@ func main() {
 		if isAllowed {
 			debug(" Allowed")
 			filename := path.Join(*root, r.URL.Path)
-			http.ServeFile(w, r, filename)
+			if _, err := os.Stat(filename); os.IsNotExist(err) {
+				http.Redirect(w, r, "/404.html", http.StatusSeeOther)
+			} else {
+				http.ServeFile(w, r, filename)
+			}
 		} else {
 			debug(" Not allowed, redirect to:", *redirectPage)
 			http.Redirect(w, r, *redirectPage, http.StatusSeeOther)
