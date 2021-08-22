@@ -13,7 +13,7 @@ import (
 
 const (
 	appName    = "HTTP Server"
-	appVersion = "v0.3.1"
+	appVersion = "v0.3.2"
 )
 
 func main() {
@@ -113,7 +113,8 @@ func main() {
 			}
 		} else {
 			debug(" Not allowed, redirect to:", *redirectPage)
-			http.Redirect(w, r, *redirectPage, http.StatusSeeOther)
+			url := fmt.Sprintf("%s?url=%s", *redirectPage, r.URL.Path)
+			http.Redirect(w, r, url, http.StatusSeeOther)
 		}
 	})
 

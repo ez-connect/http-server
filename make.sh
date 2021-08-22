@@ -12,8 +12,8 @@ for p in "${platforms[@]}"
 do
 	for a in "${archs[@]}"
 	do
+		binaryName=$appName-$p-$a
 		binaryFile=$buildDir/$appName-$p-$a
-		zipFile=$binaryFile.zip
 
 		echo $binaryFile
 
@@ -25,7 +25,10 @@ do
 		if [ "$p" != "darwin" ] || [ "$a" != "386" ]
 		then
 			GOOS=$p GOARCH=$a go build -ldflags="-s -w" -o $binaryFile
-			# zip $zipFile $binaryFile
+
+			pushd $buildDir
+			tar -zcvf $binaryName.tar.gz $binaryName
+			popd
 		fi
 	done
 done
