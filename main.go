@@ -13,20 +13,21 @@ import (
 
 const (
 	appName    = "HTTP Server"
-	appVersion = "v0.3.2"
+	appVersion = "0.3.3"
 )
 
 func main() {
 	/// Flag args
-	root := flag.String("root", "./", "Which dir to serve?")
-	host := flag.String("host", "", "An address to use")
-	port := flag.Int("port", 8080, "A port to use")
-	auth := flag.String("auth", "", "Authentication URL")
-	exp := flag.Int64("exp", 15*60, "Expire token")
-	redirectPage := flag.String("redirect", "/auth", "Authentication page")
-	v := flag.Bool("v", false, "Verbose")
-	protected := flag.String("protected", "", "Protected dirs")
-	flag.Parse()
+	f := flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
+	root := f.String("root", "./", "Which dir to serve?")
+	host := f.String("host", "", "An address to use")
+	port := f.Int("port", 8080, "A port to use")
+	auth := f.String("auth", "", "Authentication URL")
+	exp := f.Int64("exp", 15*60, "Expire token")
+	redirectPage := f.String("redirect", "/auth", "Authentication page")
+	v := f.Bool("v", false, "Verbose")
+	protected := f.String("protected", "", "Protected dirs")
+	f.Parse(os.Args[1:])
 
 	var debug func(v ...interface{})
 	if *v {
@@ -120,7 +121,7 @@ func main() {
 
 	addr := fmt.Sprintf("%s:%v", *host, *port)
 
-	fmt.Println(fmt.Sprintf("%s %s", appName, appVersion))
+	fmt.Println(fmt.Sprintf("%s v%s", appName, appVersion))
 	fmt.Println("Protected dirs:", protectedDirs)
 	fmt.Println("Authentication URL:", *auth)
 	fmt.Println("Expired in:", *exp)
