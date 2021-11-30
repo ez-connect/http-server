@@ -13,35 +13,40 @@ Or download from [releases](https://github.com/ez-connect/http-server/releases) 
 ## Usage
 
 ```
-http-server [-root <path/to/dir>] [-host <host_name>] [-port <port_number>] [-redirect <path/to/redirect/page>] [-v] [protected <path/to/protect/dir...>]
-```
+http-server [OPTIONS] path/to/dir
 
-- `-root` Which dir to serve? Defaults to `./`
-- `-host` host name, defaults to empty
-- `-port` a port to use, defaults to `8080`
-- `-auth` Authentication URL, defaults to empty
-- `-redirect` authentication page, defaults to `/auth`
-- `-v` Verbose ouput
-- `-protected` protected dirs, defaults to empty
+OPTIONS
+  -a string
+        An address to use (default ":8080")
+  -auth string
+        Authentication URL
+  -exp int
+        Expire token (default 900)
+  -protected string
+        Protected dirs
+  -redirect string
+        Authentication page (default "/auth")
+  -v    Verbose
+```
 
 ## Example
 
 Serve the current dir at `8080`
 
 ```bash
-http-server
+http-server .
 ```
 
 Serve the current dir, `/document` is protected, and `http://localhost:1337/auth` is the authentication endpoint
 
 ```bash
-http-server -auth http://localhost:1337/auth -protected /document
+http-server -auth http://localhost:1337/auth -protected /document .
 ```
 
 Serve `./public` dir, `/document` & `/blog` are protected, `http://localhost:1337/auth` is the authentication endpoint, and `/login` is your login page.
 
 ```bash
-http-server -root ./public -auth http://localhost:1337/auth -redirect /login -protected /document /blog
+http-server -auth http://localhost:1337/auth -redirect /login -protected /document /blog ./public
 ```
 
 > AUTHENTICATION

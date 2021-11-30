@@ -1,33 +1,56 @@
-GOPATH:=$(shell go env GOPATH)
+SHELL := bash
+.DEFAULT_GOAL := run
 
+# App
 name := http-server
-buildDir := dist
+version := 0.4.0
 platforms := windows linux darwin
 arch := amd64
 entryPoint := main.go
 
-.PHONY: proto build
+# Registry
+registry := docker.io
+registryRepo := ezconnect
 
-proto:
-	@protoc proto/sample.proto --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative
+-include .makerc
 
+init:
+	@go install github.com/c9s/gomon@latest
+	@make -s tidy
+
+fmt:
+	@go fmt ./...
+
+lint:
+	@golangci-lint run --fix ./...
+
+# Build and exec instead of @go run $(entryPoint)
 run:
-	@go run $(entryPoint)
+	@go build -o dist/$(name) $(entryPoint)
+	@dist/$(name) public
 
-build-debug:
-	@go build -o $(buildDir)/$(name) $(entryPoint)
-
-build:
-	@for p in $(platforms); do \
-		echo $(buildDir)/$(name)-$$p; \
-		GOOS=$$p GOARCH=$(arch) go build -ldflags="-s -w" -o $(buildDir)/$(name)-$$p $(entryPoint); \
-		pushd $(buildDir); \
-		tar -zcvf $(name)-$$p.tar.gz $(name)-$$p; \
-		popd; \
-	done
+watch:
+	@gomon main.go -- make -s run
 
 test:
 	@go test -v ./... -cover
 
-docker:
-	@docker build -t sample:latest .
+test-clean:
+	@go clean -testcache
+
+build:
+	@rm -rf dist
+	@for p in $(platforms); do \
+		echo dist/$(name)-$$p; \
+		GOOS=$$p GOARCH=$(arch) go build -ldflags="-s -w" -o dist/$(name)-$$p $(entryPoint); \
+		pushd dist > /dev/null; \
+		tar -zcvf $(name)-$$p.tar.gz $(name)-$$p; \
+		popd > /dev/null; \
+	done
+
+oci:
+	@buildah bud -t $(name):$(version)
+ifneq ($(and $(registryUsername),$(registryPassword)),)
+	@buildah login -u $(registryUsername) -p $(registryPassword) $(registry)
+	buildah push $(name):$(version) $(registry)/$(registryRepo)/$(name):$(version)
+endif

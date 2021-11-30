@@ -12,36 +12,69 @@ import (
 )
 
 const (
-	appName    = "HTTP Server"
-	appVersion = "0.3.3"
+	name    = "HTTP Server"
+	version = "0.4.0"
 )
 
 func main() {
 	/// Flag args
-	f := flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
-	root := f.String("root", "./", "Which dir to serve?")
-	host := f.String("host", "", "An address to use")
-	port := f.Int("port", 8080, "A port to use")
-	auth := f.String("auth", "", "Authentication URL")
-	exp := f.Int64("exp", 15*60, "Expire token")
-	redirectPage := f.String("redirect", "/auth", "Authentication page")
-	v := f.Bool("v", false, "Verbose")
-	protected := f.String("protected", "", "Protected dirs")
-	f.Parse(os.Args[1:])
+	var (
+		root string
+		fs   = flag.NewFlagSet(os.Args[0], flag.ContinueOnError)
+		addr = fs.String("a", ":8080", "An address to use")
 
-	var debug func(v ...interface{})
-	if *v {
+		// Authentication
+		protected    = fs.String("protected", "", "Protected dirs, separated by a comma")
+		auth         = fs.String("auth", "", "Authentication URL")
+		exp          = fs.Int64("exp", 15*60, "Expire token")
+		redirectPage = fs.String("redirect", "/auth", "Authentication page")
+
+		// Log
+		isVerbose = fs.Bool("v", false, "Verbose")
+	)
+
+	fs.Usage = usageFor(fs)
+	// nolint:errcheck
+	fs.Parse(os.Args[1:])
+
+	// No args, print usage then exit
+	if fs.NArg() < 1 {
+		fs.Usage()
+		os.Exit(1)
+	}
+
+	root = fs.Arg(0)
+
+	/// Server
+	http.HandleFunc("/", handle(root, *protected, *auth, *redirectPage, *exp, *isVerbose))
+
+	fmt.Println(name, version)
+	fmt.Println("Protected dirs:", *protected)
+	fmt.Println("Authentication URL:", *auth)
+	fmt.Println("Expired in:", *exp)
+	fmt.Println("Redirect page:", *redirectPage)
+	fmt.Println("Serve", root, "at:", *addr)
+
+	err := http.ListenAndServe(*addr, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func handle(root, protected, auth, redirectPage string, exp int64, isVerbose bool) func(http.ResponseWriter, *http.Request) {
+	var (
+		protectedDirs = strings.Split(protected, ",")
+		allowedToken  = map[string]int64{}
+		debug         func(v ...interface{})
+	)
+
+	if isVerbose {
 		debug = log.Println
 	} else {
 		debug = func(v ...interface{}) {}
 	}
 
-	/// Auth
-	allowedToken := map[string]int64{}
-	protectedDirs := strings.Fields(*protected)
-
-	/// Server
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		isAllowed := true
 		debug(r.Method, r.URL.Path)
 
@@ -69,15 +102,14 @@ func main() {
 				// Already in `allowedToken` and not exp
 				if hasToken && value > now {
 					debug(" Token exist, not expired")
-					hasToken = true
 					isAllowed = true
 					break
 				}
 
 				// Exp or
-				debug(" Auth via:", *auth)
+				debug(" Auth via:", auth)
 				client := &http.Client{}
-				req, err := http.NewRequest(http.MethodPost, *auth, nil)
+				req, err := http.NewRequest(http.MethodPost, auth, nil)
 				if err != nil {
 					break
 				}
@@ -89,7 +121,7 @@ func main() {
 
 					// Add or update the token
 					debug(" Add or update the token")
-					allowedToken[token] = now + *exp
+					allowedToken[token] = now + exp
 				} else {
 					// Delete the invalid one
 					debug(" Remove invalid token")
@@ -106,30 +138,25 @@ func main() {
 
 		if isAllowed {
 			debug(" Allowed")
-			filename := path.Join(*root, r.URL.Path)
+			filename := path.Join(root, r.URL.Path)
 			if _, err := os.Stat(filename); os.IsNotExist(err) {
-				http.Redirect(w, r, "/404.html", http.StatusSeeOther)
-			} else {
-				http.ServeFile(w, r, filename)
+				filename = path.Join(root, "404.html")
 			}
+			http.ServeFile(w, r, filename)
 		} else {
-			debug(" Not allowed, redirect to:", *redirectPage)
-			url := fmt.Sprintf("%s?url=%s", *redirectPage, r.URL.Path)
+			debug(" Not allowed, redirect to:", redirectPage)
+			url := fmt.Sprintf("%s?url=%s", redirectPage, r.URL.Path)
 			http.Redirect(w, r, url, http.StatusSeeOther)
 		}
-	})
+	}
+}
 
-	addr := fmt.Sprintf("%s:%v", *host, *port)
-
-	fmt.Println(fmt.Sprintf("%s v%s", appName, appVersion))
-	fmt.Println("Protected dirs:", protectedDirs)
-	fmt.Println("Authentication URL:", *auth)
-	fmt.Println("Expired in:", *exp)
-	fmt.Println("Redirect page:", *redirectPage)
-	fmt.Println("Serve", *root, "at:", addr)
-
-	err := http.ListenAndServe(addr, nil)
-	if err != nil {
-		log.Fatal(err)
+// CLI help
+func usageFor(fs *flag.FlagSet) func() {
+	return func() {
+		fmt.Println(name, fmt.Sprintf("v%s", version), "- Generate a gokit service")
+		fmt.Println("USAGE:", "http-server", "[OPTIONS] path/to/your/service")
+		fmt.Println("\nOPTIONS")
+		fs.PrintDefaults()
 	}
 }
