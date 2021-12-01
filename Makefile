@@ -49,10 +49,12 @@ build:
 	done
 
 oci:
-	@buildah bud -f Dockerfile -t $(name):$(version)
-	@buildah bud -f Dockerfile-alpine -t $(name):$(version)-alpine
+	@buildah bud -f ci/Dockerfile -t $(name):$(version)
+	@buildah bud -f ci/Dockerfile-alpine -t $(name):$(version)-alpine
+	@buildah bud -f ci/Dockerfile-hugo -t $(name):$(version)-hugo
 ifneq ($(and $(registryUsername),$(registryPassword)),)
 	@buildah login -u $(registryUsername) -p $(registryPassword) $(registry)
 	buildah push $(name):$(version) $(registry)/$(registryRepo)/$(name):$(version)
-	buildah push $(name):alpine-$(version) $(registry)/$(registryRepo)/$(name):$(version)-alpine
+	buildah push $(name):$(version)-alpine $(registry)/$(registryRepo)/$(name):$(version)-alpine
+	buildah push $(name):$(version)-hugo $(registry)/$(registryRepo)/$(name):$(version)-hugo
 endif

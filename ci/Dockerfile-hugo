@@ -1,0 +1,13 @@
+FROM docker.io/library/alpine:latest
+
+ARG HUGO_VERSION=0.89.4
+
+COPY dist/http-server-linux .
+RUN chmod +x http-server-linux \
+	&& mv http-server-linux /usr/bin/http-server \
+    # Install hugo
+	&& apk add --no-cache libstdc++ libc6-compat \
+    && wget https://github.com/gohugoio/hugo/releases/download/v${HUGO_VERSION}/hugo_extended_${HUGO_VERSION}_Linux-64bit.tar.gz \
+    && tar -xf hugo_extended_${HUGO_VERSION}_Linux-64bit.tar.gz \
+    && rm hugo_extended_${HUGO_VERSION}_Linux-64bit.tar.gz \
+    && chmod +x hugo && mv hugo /usr/bin/
