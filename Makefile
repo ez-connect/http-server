@@ -49,8 +49,10 @@ build:
 	done
 
 oci:
-	@buildah bud -t $(name):$(version)
+	@buildah bud -f Dockerfile -t $(name):$(version)
+	@buildah bud -f Dockerfile-alpine -t $(name):$(version)-alpine
 ifneq ($(and $(registryUsername),$(registryPassword)),)
 	@buildah login -u $(registryUsername) -p $(registryPassword) $(registry)
 	buildah push $(name):$(version) $(registry)/$(registryRepo)/$(name):$(version)
+	buildah push $(name):alpine-$(version) $(registry)/$(registryRepo)/$(name):$(version)-alpine
 endif

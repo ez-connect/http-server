@@ -1,0 +1,7 @@
+FROM docker.io/library/alpine:latest
+
+COPY dist/http-server-linux .
+RUN chmod +x http-server-linux \
+	&& mv http-server-linux /usr/bin/http-server
+
+ENTRYPOINT http-server .
