@@ -63,10 +63,14 @@ func main() {
 
 func handle(root, protected, auth, redirectPage string, exp int64, isVerbose bool) func(http.ResponseWriter, *http.Request) {
 	var (
-		protectedDirs = strings.Split(protected, ",")
+		protectedDirs = []string{}
 		allowedToken  = map[string]int64{}
 		debug         func(v ...interface{})
 	)
+
+	if protected != "" {
+		protectedDirs = strings.Split(protected, ",")
+	}
 
 	if isVerbose {
 		debug = log.Println
